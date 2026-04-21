@@ -1,0 +1,156 @@
+{
+  "pluginAlias": "MieleScout",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "HomeBridge plugin for the **Miele Scout RX2** robot vacuum cleaner. Requires a Miele Developer account and registered application to obtain API credentials.",
+  "footerDisplay": "Visit the [Miele Developer Portal](https://www.miele.com/developer/) to get your Client ID and Client Secret.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Platform Name",
+        "type": "string",
+        "default": "Miele Scout",
+        "required": true
+      },
+      "clientId": {
+        "title": "Client ID",
+        "type": "string",
+        "required": true,
+        "description": "OAuth2 Client ID from the Miele Developer Portal"
+      },
+      "clientSecret": {
+        "title": "Client Secret",
+        "type": "string",
+        "required": true,
+        "description": "OAuth2 Client Secret from the Miele Developer Portal"
+      },
+      "username": {
+        "title": "Miele Account Username (Email)",
+        "type": "string",
+        "required": true,
+        "format": "email",
+        "description": "Your Miele@home account email address"
+      },
+      "password": {
+        "title": "Miele Account Password",
+        "type": "string",
+        "required": true,
+        "description": "Your Miele@home account password"
+      },
+      "country": {
+        "title": "Country",
+        "type": "string",
+        "default": "en-GB",
+        "required": false,
+        "description": "Your country/locale code (e.g. en-GB, de-DE, en-US)"
+      },
+      "pollingInterval": {
+        "title": "Polling Interval (seconds)",
+        "type": "integer",
+        "default": 30,
+        "minimum": 10,
+        "maximum": 300,
+        "required": false,
+        "description": "How often to poll the Miele API for device status updates (used only when the real-time event stream is unavailable)"
+      },
+      "debug": {
+        "title": "Enable Debug Logging",
+        "type": "boolean",
+        "default": false,
+        "required": false,
+        "description": "Log verbose API and state details to the HomeBridge log"
+      },
+      "features": {
+        "type": "object",
+        "title": "Features",
+        "description": "Enable or disable each HomeKit service individually. Disabled services are removed from HomeKit on the next restart.",
+        "properties": {
+          "startCleaningSwitch": {
+            "title": "Start Cleaning Switch",
+            "type": "boolean",
+            "default": true,
+            "description": "Main on/off switch to start and stop cleaning runs. Siri: \"turn on/off Scout\"."
+          },
+          "returnToDockSwitch": {
+            "title": "Return to Dock Button",
+            "type": "boolean",
+            "default": true,
+            "description": "Momentary switch that sends the robot back to its charging base. Siri: \"turn on Scout Return to Dock\"."
+          },
+          "pauseSwitch": {
+            "title": "Pause / Resume Switch",
+            "type": "boolean",
+            "default": true,
+            "description": "Toggle switch to pause and resume an active cleaning run."
+          },
+          "cleaningActiveSensor": {
+            "title": "Cleaning Active Sensor",
+            "type": "boolean",
+            "default": true,
+            "description": "Occupancy sensor that triggers HomeKit automations when cleaning starts or finishes."
+          },
+          "dockedSensor": {
+            "title": "Docked Sensor",
+            "type": "boolean",
+            "default": true,
+            "description": "Occupancy sensor that triggers HomeKit automations when the robot returns home."
+          },
+          "dustBoxSensor": {
+            "title": "Dust Box Sensor",
+            "type": "boolean",
+            "default": true,
+            "description": "Contact sensor that opens (alerts) when the dust box has been removed."
+          },
+          "stuckSensor": {
+            "title": "Stuck / Blocked Sensor",
+            "type": "boolean",
+            "default": true,
+            "description": "Motion sensor that fires when the robot gets stuck, blocked or lost."
+          },
+          "batteryService": {
+            "title": "Battery Service",
+            "type": "boolean",
+            "default": true,
+            "description": "Expose battery level, charging state and low-battery warning to HomeKit."
+          }
+        }
+      }
+    }
+  },
+  "layout": [
+    {
+      "type": "section",
+      "title": "Miele Account",
+      "items": ["username", "password"]
+    },
+    {
+      "type": "section",
+      "title": "API Credentials",
+      "items": ["clientId", "clientSecret"]
+    },
+    {
+      "type": "section",
+      "title": "Features",
+      "expandable": true,
+      "expanded": true,
+      "items": [
+        "features.startCleaningSwitch",
+        "features.returnToDockSwitch",
+        "features.pauseSwitch",
+        "features.cleaningActiveSensor",
+        "features.dockedSensor",
+        "features.dustBoxSensor",
+        "features.stuckSensor",
+        "features.batteryService"
+      ]
+    },
+    {
+      "type": "section",
+      "title": "Advanced",
+      "expandable": true,
+      "expanded": false,
+      "items": ["country", "pollingInterval", "debug"]
+    }
+  ]
+}

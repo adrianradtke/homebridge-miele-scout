@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(cmd.exe /c \"node --version && npm --version\")",
+      "Bash(cmd.exe /c \"dir C:\\\\Users\\\\Sarah\\\\Desktop\\\\HomeBridge-Scout\")",
+      "Bash(cmd.exe /c \"node --version\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(cmd.exe /c \"node -e \\\\\"console.log\\(process.version\\)\\\\\"\")",
+      "Bash(powershell.exe -Command \"node --version; npm --version\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Sarah\\\\Desktop\\\\HomeBridge Scout'\")",
+      "Bash(powershell.exe -Command 'Get-Command node -ErrorAction SilentlyContinue; $env:PATH -split '\\\\'';'\\\\'' | Select-String -Pattern '\\\\''node|npm'\\\\'' -SimpleMatch')",
+      "Bash(powershell.exe -Command \"Test-Path 'C:\\\\Program Files\\\\nodejs\\\\node.exe'; Test-Path 'C:\\\\Program Files \\(x86\\)\\\\nodejs\\\\node.exe'; Get-ChildItem 'C:\\\\Program Files\\\\' -Filter 'node*' -ErrorAction SilentlyContinue\")",
+      "Bash(powershell.exe -Command ':*)",
+      "WebSearch",
+      "WebFetch(domain:developers.homebridge.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(powershell.exe -Command \"git --version; node --version; npm --version\")",
+      "Bash(powershell.exe -Command ' *)"
+    ]
+  }
+}
