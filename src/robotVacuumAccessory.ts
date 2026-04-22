@@ -263,7 +263,8 @@ export class RobotVacuumAccessory {
     const existing = this.accessory.getService(serviceType);
 
     if (enabled) {
-      const svc = existing ?? this.accessory.addService(serviceType);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const svc = existing ?? this.accessory.addService(serviceType as any);
       configure(svc);
       return svc;
     }
