@@ -1,0 +1,11 @@
+# Source files (dist/ is published instead)
+src/
+
+# Dev config
+.claude/
+tsconfig.json
+.eslintrc*
+.gitattributes
+
+# Misc
+*.tgz

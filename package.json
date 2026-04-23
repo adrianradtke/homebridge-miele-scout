@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/adrianradtke/homebridge-miele-scout.git"
+    "url": "git+https://github.com/adrianradtke/homebridge-miele-scout.git"
   },
   "bugs": {
     "url": "https://github.com/adrianradtke/homebridge-miele-scout/issues"
