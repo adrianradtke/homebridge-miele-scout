@@ -33,8 +33,8 @@ import { RobotVacuumAccessory } from './robotVacuumAccessory';
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Miele device type ID for robot vacuum cleaners */
-const ROBOT_VACUUM_TYPE_ID = 74;
+/** Miele device type ID for robot vacuum cleaners (value_raw=23 per Miele API) */
+const ROBOT_VACUUM_TYPE_ID = 23;
 
 /**
  * How long (ms) we wait for an SSE 'connected' event before giving up and
@@ -190,21 +190,9 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
     const activeUUIDs = new Set<string>();
 
     for (const [deviceId, device] of deviceEntries) {
-      // Diagnostic: log the raw top-level keys and type info so we can
-      // confirm the actual API response shape.
-      this.log.info(
-        `Device ${deviceId} raw keys: ${Object.keys(device as object).join(', ')}`,
-      );
-      this.log.info(
-        `Device ${deviceId} raw data: ${JSON.stringify(device).slice(0, 400)}`,
-      );
-
-      const typeRaw = (device as any)?.ident?.type?.value_raw
-        ?? (device as any)?.type?.value_raw;
-
-      if (typeRaw !== ROBOT_VACUUM_TYPE_ID) {
-        this.log.info(
-          `Skipping device ${deviceId} — type_raw=${typeRaw} (expected ${ROBOT_VACUUM_TYPE_ID})`,
+      if (device.ident.type.value_raw !== ROBOT_VACUUM_TYPE_ID) {
+        this.log.debug(
+          `Skipping device ${deviceId} — type_raw=${device.ident.type.value_raw} (${device.ident.type.value_localized})`,
         );
         continue;
       }
@@ -214,7 +202,7 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
 
       const displayName =
         device.ident.deviceName ||
-        device.ident.modelDesignation ||
+        device.ident.deviceIdentLabel?.techType ||
         `Miele Scout (${deviceId.slice(-4)})`;
 
       const existing = this.accessories.find((a) => a.UUID === uuid);

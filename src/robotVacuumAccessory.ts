@@ -103,9 +103,9 @@ export class RobotVacuumAccessory {
 
     this.infoService
       .setCharacteristic(Characteristic.Manufacturer, 'Miele')
-      .setCharacteristic(Characteristic.Model, device?.ident?.modelDesignation ?? 'Scout RX2')
-      .setCharacteristic(Characteristic.SerialNumber, device?.ident?.fabNumber ?? deviceId)
-      .setCharacteristic(Characteristic.FirmwareRevision, '1.3.1');
+      .setCharacteristic(Characteristic.Model, device?.ident?.deviceName ?? 'Scout RX2')
+      .setCharacteristic(Characteristic.SerialNumber, device?.ident?.deviceIdentLabel?.fabNumber ?? deviceId)
+      .setCharacteristic(Characteristic.FirmwareRevision, '1.3.4');
 
     // -------------------------------------------------------------------------
     // Conditional services — each one created only if enabled in config
