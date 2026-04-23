@@ -25,11 +25,8 @@ const MIELE_TOKEN_URL = 'https://api.mcs3.miele.com/thirdparty/token';
 /** processAction values accepted by the Miele API */
 export enum ProcessAction {
   Start = 1,
-  Stop = 2,
+  Stop  = 2,  // For robot vacuums: STOP returns the robot to its charging base
   Pause = 3,
-  StartSuperFooling = 4, // not used for vacuums
-  ResetFreezer = 5,
-  SendToBase = 6,
 }
 
 /** Status values returned by the Miele API for a device */

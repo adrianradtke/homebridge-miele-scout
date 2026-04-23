@@ -8,7 +8,7 @@
  *
  * Available services (all optional):
  *   • Switch "Start Cleaning"        — ON = clean, OFF = stop
- *   • Switch "Return to Dock"        — Momentary: sends robot home (SendToBase)
+ *   • Switch "Return to Dock"        — Momentary: sends robot home (Stop)
  *   • Switch "Pause Cleaning"        — Toggle: ON = paused, OFF = resumed
  *   • OccupancySensor "Cleaning Active"
  *   • OccupancySensor "Scout Docked"
@@ -249,15 +249,8 @@ export class RobotVacuumAccessory {
 
     if (enabled) {
       const svc = existing ?? this.accessory.addService(serviceType, displayName, subtype);
-      // Name  — internal HAP identifier shown in some HomeKit clients
+      // Name — the label shown for this service in HomeKit clients
       svc.setCharacteristic(this.platform.Characteristic.Name, displayName);
-      // ConfiguredName — the user-visible label shown on tiles in the Home app
-      svc.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName);
-      // Add the description as a subtitle where the Home app supports it
-      if ((this.platform.Characteristic as any).ServiceLabelIndex === undefined) {
-        // Store description in the service's displayName for logging clarity
-        (svc as any)._description = description;
-      }
       this.platform.log.debug(`[${this.accessory.displayName}] Service "${displayName}": ${description}`);
       configure(svc);
       return svc;
@@ -347,12 +340,12 @@ export class RobotVacuumAccessory {
       this.throwHapError();
     }
 
-    this.platform.log.info(`[${this.accessory.displayName}] Sending to dock (SendToBase).`);
+    this.platform.log.info(`[${this.accessory.displayName}] Sending to dock (Stop → returns to base).`);
     const prevIsOn     = this.isOn;
     const prevIsPaused = this.isPaused;
 
     try {
-      await this.api.sendProcessAction(this.deviceId, ProcessAction.SendToBase);
+      await this.api.sendProcessAction(this.deviceId, ProcessAction.Stop);
       this.isOn     = false;
       this.isPaused = false;
 
