@@ -125,6 +125,7 @@ export class MieleSSEClient extends EventEmitter {
         Authorization: `Bearer ${token}`,
         Accept: 'text/event-stream',
         'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
       },
     };
 
@@ -179,7 +180,14 @@ export class MieleSSEClient extends EventEmitter {
     });
 
     this.request.on('error', (err) => {
-      this.log.warn('[SSE] Request error:', err.message);
+      // 'aborted' on initial connect is normal — the Miele server closes the
+      // TCP connection immediately and expects the client to reconnect.
+      // Demote to debug so it doesn't pollute the log on every startup.
+      if (err.message === 'aborted' || err.message === 'socket hang up') {
+        this.log.debug('[SSE] Connection reset by server — reconnecting.');
+      } else {
+        this.log.warn('[SSE] Request error:', err.message);
+      }
       this.emit('error', err);
       this.scheduleReconnect();
     });
