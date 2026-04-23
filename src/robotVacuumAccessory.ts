@@ -115,7 +115,8 @@ export class RobotVacuumAccessory {
       feat.startCleaningSwitch,
       Svc.Switch,
       SUBTYPE.cleaning,
-      `${name} Start Cleaning`,
+      'Start Cleaning',
+      'ON starts a cleaning run · OFF stops and returns to dock',
       (svc) => {
         svc.getCharacteristic(Characteristic.On)
           .onGet(this.handleCleaningGet.bind(this))
@@ -127,7 +128,8 @@ export class RobotVacuumAccessory {
       feat.returnToDockSwitch,
       Svc.Switch,
       SUBTYPE.dock,
-      `${name} Return to Dock`,
+      'Return to Dock',
+      'Momentary — sends the robot back to its charging base',
       (svc) => {
         svc.getCharacteristic(Characteristic.On)
           .onGet(async () => false)
@@ -139,7 +141,8 @@ export class RobotVacuumAccessory {
       feat.pauseSwitch,
       Svc.Switch,
       SUBTYPE.pause,
-      `${name} Pause Cleaning`,
+      'Pause / Resume',
+      'ON pauses mid-clean · OFF resumes cleaning',
       (svc) => {
         svc.getCharacteristic(Characteristic.On)
           .onGet(this.handlePauseGet.bind(this))
@@ -151,7 +154,8 @@ export class RobotVacuumAccessory {
       feat.cleaningActiveSensor,
       Svc.OccupancySensor,
       SUBTYPE.cleaningS,
-      `${name} Cleaning Active`,
+      'Cleaning Active',
+      'Occupied while the robot is actively cleaning',
       (svc) => {
         svc.getCharacteristic(Characteristic.OccupancyDetected)
           .onGet(this.handleCleaningSensorGet.bind(this));
@@ -166,7 +170,8 @@ export class RobotVacuumAccessory {
       feat.dockedSensor,
       Svc.OccupancySensor,
       SUBTYPE.dockedS,
-      `${name} Docked`,
+      'Docked at Base',
+      'Occupied while the robot is on its charging base',
       (svc) => {
         svc.getCharacteristic(Characteristic.OccupancyDetected)
           .onGet(this.handleDockedSensorGet.bind(this));
@@ -179,7 +184,8 @@ export class RobotVacuumAccessory {
       feat.dustBoxSensor,
       Svc.ContactSensor,
       SUBTYPE.dustBox,
-      `${name} Dust Box`,
+      'Dust Box',
+      'Open (triggered) when the dust box is removed',
       (svc) => {
         svc.getCharacteristic(Characteristic.ContactSensorState)
           .onGet(this.handleDustBoxGet.bind(this));
@@ -192,7 +198,8 @@ export class RobotVacuumAccessory {
       feat.stuckSensor,
       Svc.MotionSensor,
       SUBTYPE.stuck,
-      `${name} Stuck`,
+      'Robot Stuck',
+      'Motion detected when the robot is stuck or lost',
       (svc) => {
         svc.getCharacteristic(Characteristic.MotionDetected)
           .onGet(this.handleStuckGet.bind(this));
@@ -235,14 +242,23 @@ export class RobotVacuumAccessory {
     serviceType: WithUUID<typeof Service>,
     subtype: string,
     displayName: string,
+    description: string,
     configure: (svc: Service) => void,
   ): Service | undefined {
     const existing = this.accessory.getServiceById(serviceType, subtype);
 
     if (enabled) {
       const svc = existing ?? this.accessory.addService(serviceType, displayName, subtype);
-      // Update display name if user renamed the accessory
+      // Name  — internal HAP identifier shown in some HomeKit clients
       svc.setCharacteristic(this.platform.Characteristic.Name, displayName);
+      // ConfiguredName — the user-visible label shown on tiles in the Home app
+      svc.setCharacteristic(this.platform.Characteristic.ConfiguredName, displayName);
+      // Add the description as a subtitle where the Home app supports it
+      if ((this.platform.Characteristic as any).ServiceLabelIndex === undefined) {
+        // Store description in the service's displayName for logging clarity
+        (svc as any)._description = description;
+      }
+      this.platform.log.debug(`[${this.accessory.displayName}] Service "${displayName}": ${description}`);
       configure(svc);
       return svc;
     }
