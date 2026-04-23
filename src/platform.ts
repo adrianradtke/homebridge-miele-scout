@@ -190,9 +190,21 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
     const activeUUIDs = new Set<string>();
 
     for (const [deviceId, device] of deviceEntries) {
-      if (device.ident.type.value_raw !== ROBOT_VACUUM_TYPE_ID) {
+      // Diagnostic: log the raw top-level keys and type info so we can
+      // confirm the actual API response shape.
+      this.log.info(
+        `Device ${deviceId} raw keys: ${Object.keys(device as object).join(', ')}`,
+      );
+      this.log.info(
+        `Device ${deviceId} raw data: ${JSON.stringify(device).slice(0, 400)}`,
+      );
+
+      const typeRaw = (device as any)?.ident?.type?.value_raw
+        ?? (device as any)?.type?.value_raw;
+
+      if (typeRaw !== ROBOT_VACUUM_TYPE_ID) {
         this.log.info(
-          `Skipping device ${deviceId} — type_raw=${device.ident.type.value_raw} (${device.ident.type.value_localized})`,
+          `Skipping device ${deviceId} — type_raw=${typeRaw} (expected ${ROBOT_VACUUM_TYPE_ID})`,
         );
         continue;
       }
