@@ -14,9 +14,9 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 // Constants
 // ---------------------------------------------------------------------------
 
-const MIELE_BASE_URL = 'https://api.mcs3.mcp.miele.com/v1';
-const MIELE_AUTH_URL = 'https://api.mcs3.mcp.miele.com/thirdparty/login';
-const MIELE_TOKEN_URL = 'https://api.mcs3.mcp.miele.com/thirdparty/token';
+const MIELE_BASE_URL = 'https://api.mcs3.miele.com/v1';
+const MIELE_AUTH_URL = 'https://api.mcs3.miele.com/thirdparty/login';
+const MIELE_TOKEN_URL = 'https://api.mcs3.miele.com/thirdparty/token';
 
 // ---------------------------------------------------------------------------
 // Enums — mirrors Miele API values
