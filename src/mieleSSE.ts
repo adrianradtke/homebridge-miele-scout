@@ -173,7 +173,13 @@ export class MieleSSEClient extends EventEmitter {
       });
 
       res.on('error', (err) => {
-        this.log.warn('[SSE] Stream error:', err.message);
+        // 'aborted' is normal on the initial connect — the Miele server closes
+        // the response stream immediately and expects the client to reconnect.
+        if (err.message === 'aborted' || err.message === 'socket hang up') {
+          this.log.debug('[SSE] Connection reset by server — reconnecting.');
+        } else {
+          this.log.warn('[SSE] Stream error:', err.message);
+        }
         this.emit('error', err);
         this.scheduleReconnect();
       });
