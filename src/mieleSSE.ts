@@ -2,7 +2,7 @@
  * MieleSSEClient
  *
  * Connects to the Miele@home Server-Sent Events (SSE) endpoint:
- *   GET https://api.mcs3.mcp.miele.com/v1/devices/all/events
+ *   GET https://api.mcs3.miele.com/v1/devices/all/events
  *
  * The SSE stream pushes real-time device state changes so we don't
  * need to poll the REST API on a fixed interval.  Polling remains
@@ -32,7 +32,7 @@ import { MieleDeviceState } from './mieleApi';
 // Constants
 // ---------------------------------------------------------------------------
 
-const SSE_HOST = 'api.mcs3.mcp.miele.com';
+const SSE_HOST = 'api.mcs3.miele.com';
 const SSE_PATH = '/v1/devices/all/events';
 
 /** Minimum ms before first reconnect attempt */
