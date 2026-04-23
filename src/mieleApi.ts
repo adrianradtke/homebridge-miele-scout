@@ -79,11 +79,15 @@ export interface MieleDeviceState {
   };
 }
 
-export interface MieleDevice {
-  fabNumber: string;
-  type: { value_raw: number; value_localized: string };
-  deviceName: string;
+export interface MieleDeviceIdent {
+  type:             { value_raw: number; value_localized: string };
+  deviceName:       string;
   modelDesignation: string;
+  fabNumber:        string;
+}
+
+export interface MieleDevice {
+  ident: MieleDeviceIdent;
   state: MieleDeviceState;
 }
 

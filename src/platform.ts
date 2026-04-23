@@ -190,9 +190,9 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
     const activeUUIDs = new Set<string>();
 
     for (const [deviceId, device] of deviceEntries) {
-      if (device.type.value_raw !== ROBOT_VACUUM_TYPE_ID) {
-        this.log.debug(
-          `Skipping device ${deviceId} — type ${device.type.value_raw} (${device.type.value_localized})`,
+      if (device.ident.type.value_raw !== ROBOT_VACUUM_TYPE_ID) {
+        this.log.info(
+          `Skipping device ${deviceId} — type_raw=${device.ident.type.value_raw} (${device.ident.type.value_localized})`,
         );
         continue;
       }
@@ -201,8 +201,8 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
       activeUUIDs.add(uuid);
 
       const displayName =
-        device.deviceName ||
-        device.modelDesignation ||
+        device.ident.deviceName ||
+        device.ident.modelDesignation ||
         `Miele Scout (${deviceId.slice(-4)})`;
 
       const existing = this.accessories.find((a) => a.UUID === uuid);
