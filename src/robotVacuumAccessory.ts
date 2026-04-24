@@ -468,9 +468,16 @@ export class RobotVacuumAccessory {
     const rc = state.robotCleaner;
 
     // Temporary: dump full state so we can map all field names and values
-    this.platform.log.info(
-      `[${this.accessory.displayName}] updateState RAW: ${JSON.stringify(state)}`,
-    );
+    const s = state as unknown as Record<string, unknown>;
+    this.platform.log.info(`[${this.accessory.displayName}] state keys: ${Object.keys(s).join(', ')}`);
+    this.platform.log.info(`[${this.accessory.displayName}] status=${JSON.stringify(s['status'])} phase=${JSON.stringify(s['programPhase'])} battery=${JSON.stringify(s['batteryLevel'])}`);
+    // Log any key that looks robot-specific (not standard appliance fields)
+    const skip = new Set(['ProgramID','status','programType','programPhase','remainingTime','startTime','targetTemperature','coreTargetTemperature','temperature','coreTemperature','signalInfo','signalFailure','signalDoor','remoteEnable']);
+    for (const key of Object.keys(s)) {
+      if (!skip.has(key)) {
+        this.platform.log.info(`[${this.accessory.displayName}] extra field "${key}": ${JSON.stringify(s[key])}`);
+      }
+    }
 
     // Snapshot previous values
     const prev = {
