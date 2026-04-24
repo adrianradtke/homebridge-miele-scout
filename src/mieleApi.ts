@@ -114,6 +114,8 @@ export class MieleApiClient {
   private readonly config: MieleConfig;
   private token: MieleAuthToken | null = null;
   private http: AxiosInstance;
+  /** In-flight auth promise — prevents concurrent refresh storms */
+  private authInFlight: Promise<void> | null = null;
 
   constructor(config: MieleConfig) {
     this.config = config;
@@ -203,18 +205,27 @@ export class MieleApiClient {
 
   /**
    * Ensure we have a valid, non-expired token before each API call.
+   * Uses a shared in-flight promise so concurrent callers wait on the
+   * same refresh rather than each triggering a duplicate auth request.
    */
   private async ensureAuthenticated(): Promise<void> {
-    if (!this.token) {
-      await this.authenticate();
+    const needsAuth = !this.token;
+    const expiresAt = this.token
+      ? this.token.issued_at + (this.token.expires_in - 60) * 1_000
+      : 0;
+    const needsRefresh = !needsAuth && Date.now() >= expiresAt;
+
+    if (!needsAuth && !needsRefresh) {
       return;
     }
 
-    // Refresh 60 seconds before actual expiry
-    const expiresAt = this.token.issued_at + (this.token.expires_in - 60) * 1000;
-    if (Date.now() >= expiresAt) {
-      await this.refreshToken();
+    if (!this.authInFlight) {
+      const action = needsAuth ? this.authenticate() : this.refreshToken();
+      this.authInFlight = action.finally(() => {
+        this.authInFlight = null;
+      });
     }
+    return this.authInFlight;
   }
 
   // -------------------------------------------------------------------------
@@ -360,10 +371,13 @@ export class MieleApiClient {
   private formatError(err: unknown): string {
     if (err instanceof AxiosError) {
       const status = err.response?.status ?? 'no response';
-      const data = err.response?.data
-        ? JSON.stringify(err.response.data)
+      // Redact Authorization header from any reflected request data to avoid
+      // leaking tokens into logs. Only log the message/code from the body.
+      const body = err.response?.data;
+      const detail = body
+        ? `${(body as any).message ?? (body as any).code ?? JSON.stringify(body).slice(0, 120)}`
         : err.message;
-      return `HTTP ${status} — ${data}`;
+      return `HTTP ${status} — ${detail}`;
     }
     if (err instanceof Error) {
       return err.message;

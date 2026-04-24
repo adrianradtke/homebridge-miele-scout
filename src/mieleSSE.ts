@@ -172,31 +172,10 @@ export class MieleSSEClient extends EventEmitter {
         this.scheduleReconnect();
       });
 
-      res.on('error', (err) => {
-        // 'aborted' is normal on the initial connect — the Miele server closes
-        // the response stream immediately and expects the client to reconnect.
-        if (err.message === 'aborted' || err.message === 'socket hang up') {
-          this.log.debug('[SSE] Connection reset by server — reconnecting.');
-        } else {
-          this.log.warn('[SSE] Stream error:', err.message);
-        }
-        this.emit('error', err);
-        this.scheduleReconnect();
-      });
+      res.on('error', (err) => this.handleTransportError(err));
     });
 
-    this.request.on('error', (err) => {
-      // 'aborted' on initial connect is normal — the Miele server closes the
-      // TCP connection immediately and expects the client to reconnect.
-      // Demote to debug so it doesn't pollute the log on every startup.
-      if (err.message === 'aborted' || err.message === 'socket hang up') {
-        this.log.debug('[SSE] Connection reset by server — reconnecting.');
-      } else {
-        this.log.warn('[SSE] Request error:', err.message);
-      }
-      this.emit('error', err);
-      this.scheduleReconnect();
-    });
+    this.request.on('error', (err) => this.handleTransportError(err));
 
     // SSE is a long-lived GET — no body to send, just end the request headers
     this.request.end();
@@ -249,6 +228,25 @@ export class MieleSSEClient extends EventEmitter {
         this.emit('deviceUpdate', deviceId, deviceData.state);
       }
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Error handling
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Shared handler for both request-level and response-level transport errors.
+   * The Miele server routinely resets the initial connection ("aborted") — this
+   * is expected behaviour, so we demote it to debug rather than warn.
+   */
+  private handleTransportError(err: Error): void {
+    if (err.message === 'aborted' || err.message === 'socket hang up') {
+      this.log.debug('[SSE] Connection reset by server — reconnecting.');
+    } else {
+      this.log.warn('[SSE] Transport error:', err.message);
+    }
+    this.emit('error', err);
+    this.scheduleReconnect();
   }
 
   // ---------------------------------------------------------------------------

@@ -108,6 +108,9 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
   /** REST polling timer — only active when SSE is unavailable */
   private pollingTimer: ReturnType<typeof setInterval> | null = null;
 
+  /** Timeout that triggers the polling fallback if SSE doesn't connect in time */
+  private sseFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
   /** Whether SSE connected successfully */
   private sseConnected = false;
 
@@ -119,9 +122,12 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
     this.Service = hbApi.hap.Service;
     this.Characteristic = hbApi.hap.Characteristic;
 
-    if (!config.clientId || !config.clientSecret || !config.username || !config.password) {
+    const missing = (['clientId', 'clientSecret', 'username', 'password'] as const).filter(
+      (k) => !config[k]?.toString().trim(),
+    );
+    if (missing.length) {
       this.log.error(
-        'Missing required configuration. Provide clientId, clientSecret, username, and password.',
+        `Missing or blank required configuration: ${missing.join(', ')}. Plugin will not start.`,
       );
     }
 
@@ -291,7 +297,8 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
     this.sseClient.start();
 
     // Give SSE a window to connect; start polling as fallback if it doesn't
-    setTimeout(() => {
+    this.sseFallbackTimer = setTimeout(() => {
+      this.sseFallbackTimer = null;
       if (!this.sseConnected) {
         this.log.warn(
           `SSE did not connect within ${SSE_FALLBACK_TIMEOUT_MS / 1000}s — ` +
@@ -311,8 +318,13 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
       return; // already running
     }
 
-    const intervalMs = (this.config.pollingInterval ?? 30) * 1_000;
-    this.log.info(`Polling Miele API every ${intervalMs / 1000}s (fallback mode).`);
+    const rawInterval = this.config.pollingInterval ?? 30;
+    const intervalSec = Math.max(10, Math.min(300, rawInterval));
+    if (rawInterval !== intervalSec) {
+      this.log.warn(`pollingInterval ${rawInterval}s is out of the valid range (10–300) — clamped to ${intervalSec}s.`);
+    }
+    const intervalMs = intervalSec * 1_000;
+    this.log.info(`Polling Miele API every ${intervalSec}s (fallback mode).`);
 
     // Run immediately, then on interval
     void this.pollAllDevices();
@@ -345,7 +357,13 @@ export class MieleScoutPlatform implements DynamicPlatformPlugin {
   shutdown(): void {
     this.log.debug('Platform shutting down.');
 
+    if (this.sseFallbackTimer) {
+      clearTimeout(this.sseFallbackTimer);
+      this.sseFallbackTimer = null;
+    }
+
     if (this.sseClient) {
+      this.sseClient.removeAllListeners();
       this.sseClient.stop();
       this.sseClient = null;
     }

@@ -34,6 +34,7 @@ import {
   DeviceStatus,
   PHASE_DOCKED,
 } from './mieleApi';
+import { version as PLUGIN_VERSION } from '../package.json';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -78,8 +79,14 @@ export class RobotVacuumAccessory {
   private dustBoxIn   = true;
   private isBlocked   = false;
   private batteryLevel  = 100;
-  private isCharging    = false;
-  private isLowBattery  = false;
+
+  // Derived — computed on demand from batteryLevel, isDocked, isOffline
+  private get isCharging(): boolean {
+    return !this.isOffline && this.isDocked && this.batteryLevel < 100;
+  }
+  private get isLowBattery(): boolean {
+    return this.batteryLevel < LOW_BATTERY_THRESHOLD;
+  }
 
   // ----- Timers -----
   private dockResetTimer: ReturnType<typeof setTimeout> | null = null;
@@ -106,7 +113,7 @@ export class RobotVacuumAccessory {
       .setCharacteristic(Characteristic.Manufacturer, 'Miele')
       .setCharacteristic(Characteristic.Model, device?.ident?.deviceName ?? 'Scout RX2')
       .setCharacteristic(Characteristic.SerialNumber, device?.ident?.deviceIdentLabel?.fabNumber ?? deviceId)
-      .setCharacteristic(Characteristic.FirmwareRevision, '1.3.4');
+      .setCharacteristic(Characteristic.FirmwareRevision, PLUGIN_VERSION);
 
     // -------------------------------------------------------------------------
     // Conditional services — each one created only if enabled in config
@@ -297,10 +304,7 @@ export class RobotVacuumAccessory {
   }
 
   private async handleCleaningSet(value: CharacteristicValue): Promise<void> {
-    if (this.isOffline) {
-      this.platform.log.warn(`[${this.accessory.displayName}] Cannot send command — robot is offline.`);
-      this.throwHapError();
-    }
+    this.assertOnline('send command');
 
     const start = value as boolean;
     const prevIsOn = this.isOn;
@@ -336,9 +340,8 @@ export class RobotVacuumAccessory {
     }
 
     if (this.isOffline) {
-      this.platform.log.warn(`[${this.accessory.displayName}] Cannot dock — robot is offline.`);
-      this.scheduleMomentaryReset();
-      this.throwHapError();
+      this.scheduleMomentaryReset(); // reset the switch visually even when offline
+      this.assertOnline('dock');     // logs warning and throws
     }
 
     this.platform.log.info(`[${this.accessory.displayName}] Sending to dock (Stop → returns to base).`);
@@ -371,10 +374,7 @@ export class RobotVacuumAccessory {
   }
 
   private async handlePauseSet(value: CharacteristicValue): Promise<void> {
-    if (this.isOffline) {
-      this.platform.log.warn(`[${this.accessory.displayName}] Cannot pause — robot is offline.`);
-      this.throwHapError();
-    }
+    this.assertOnline('pause');
 
     const pause = value as boolean;
     const prevIsPaused = this.isPaused;
@@ -504,8 +504,6 @@ export class RobotVacuumAccessory {
     if (typeof state.batteryLevel === 'number') {
       this.batteryLevel = Math.max(0, Math.min(100, state.batteryLevel));
     }
-    this.isCharging   = !this.isOffline && this.isDocked && this.batteryLevel < 100;
-    this.isLowBattery = this.batteryLevel < LOW_BATTERY_THRESHOLD;
 
     // ------------------------------------------------------------------
     // Push only changed values to HomeKit (all guarded by optional-chain)
@@ -614,6 +612,14 @@ export class RobotVacuumAccessory {
       this.dockResetTimer = null;
       this.dockSwitch?.updateCharacteristic(this.platform.Characteristic.On, false);
     }, MOMENTARY_RESET_MS);
+  }
+
+  /** Throw a HomeKit communication-failure error if the robot is offline. */
+  private assertOnline(context: string): void {
+    if (this.isOffline) {
+      this.platform.log.warn(`[${this.accessory.displayName}] Cannot ${context} — robot is offline.`);
+      this.throwHapError();
+    }
   }
 
   private throwHapError(): never {
