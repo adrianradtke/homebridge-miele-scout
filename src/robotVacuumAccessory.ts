@@ -469,7 +469,7 @@ export class RobotVacuumAccessory {
 
     // Temporary: dump full state so we can map all field names and values
     this.platform.log.info(
-      `[${this.accessory.displayName}] updateState RAW: ${JSON.stringify(state).slice(0, 600)}`,
+      `[${this.accessory.displayName}] updateState RAW: ${JSON.stringify(state)}`,
     );
 
     // Snapshot previous values
