@@ -64,17 +64,23 @@ export interface MieleAuthToken {
 }
 
 export interface MieleDeviceState {
-  status: { value_raw: number; value_localized: string };
-  programType: { value_raw: number; value_localized: string };
+  status:       { value_raw: number; value_localized: string };
+  programType:  { value_raw: number; value_localized: string };
   programPhase: { value_raw: number; value_localized: string };
   remainingTime: number[];
-  batteryLevel: number;
-  robotCleaner?: {
-    dustBoxInserted: boolean;
-    lost: boolean;
-    blocked: boolean;
-  };
+  batteryLevel:  number;
+  /** True when the robot is stuck, blocked, or has a fault */
+  signalFailure: boolean;
+  /** True when the dust box is removed (Miele treats it as an open door) */
+  signalDoor:    boolean;
 }
+
+/**
+ * programPhase value the Miele Scout reports when docked and charging.
+ * Both cleaning and charging use status=5 ("In use"), so phase is the
+ * only reliable way to distinguish them.
+ */
+export const PHASE_DOCKED = 5891;
 
 export interface MieleDeviceIdent {
   type:             { value_raw: number; value_localized: string };

@@ -32,6 +32,7 @@ import {
   MieleDeviceState,
   ProcessAction,
   DeviceStatus,
+  PHASE_DOCKED,
 } from './mieleApi';
 
 // ---------------------------------------------------------------------------
@@ -464,20 +465,15 @@ export class RobotVacuumAccessory {
   // ===========================================================================
 
   updateState(state: MieleDeviceState): void {
-    const statusRaw: number = state.status?.value_raw ?? DeviceStatus.Off;
-    const rc = state.robotCleaner;
+    const statusRaw: number = state.status?.value_raw    ?? DeviceStatus.Off;
+    const phaseRaw:  number = state.programPhase?.value_raw ?? 0;
 
-    // Temporary: dump full state so we can map all field names and values
-    const s = state as unknown as Record<string, unknown>;
-    this.platform.log.info(`[${this.accessory.displayName}] state keys: ${Object.keys(s).join(', ')}`);
-    this.platform.log.info(`[${this.accessory.displayName}] status=${JSON.stringify(s['status'])} phase=${JSON.stringify(s['programPhase'])} battery=${JSON.stringify(s['batteryLevel'])}`);
-    // Log any key that looks robot-specific (not standard appliance fields)
-    const skip = new Set(['ProgramID','status','programType','programPhase','remainingTime','startTime','targetTemperature','coreTargetTemperature','temperature','coreTemperature','signalInfo','signalFailure','signalDoor','remoteEnable']);
-    for (const key of Object.keys(s)) {
-      if (!skip.has(key)) {
-        this.platform.log.info(`[${this.accessory.displayName}] extra field "${key}": ${JSON.stringify(s[key])}`);
-      }
-    }
+    this.platform.log.debug(
+      `[${this.accessory.displayName}] updateState` +
+        ` status=${statusRaw} (${state.status?.value_localized ?? '?'})` +
+        ` phase=${phaseRaw} battery=${state.batteryLevel}%` +
+        ` signalDoor=${state.signalDoor} signalFailure=${state.signalFailure}`,
+    );
 
     // Snapshot previous values
     const prev = {
@@ -490,17 +486,20 @@ export class RobotVacuumAccessory {
       isBlocked:  this.isBlocked,
     };
 
-    // Derive new state
+    // Derive new state.
+    // The Scout reports status=5 ("In use") for BOTH cleaning AND charging.
+    // programPhase=5891 is the docked/charging phase — the only reliable
+    // way to distinguish "at base" from "actively cleaning".
     this.isOffline = MieleApiClient.isOffline(statusRaw);
-    this.isOn      = !this.isOffline && MieleApiClient.isRunning(statusRaw);
+    this.isDocked  = !this.isOffline && phaseRaw === PHASE_DOCKED;
+    this.isOn      = !this.isOffline && !this.isDocked && MieleApiClient.isRunning(statusRaw);
     this.isPaused  = !this.isOffline && MieleApiClient.isPaused(statusRaw);
-    this.isDocked  = !this.isOffline && MieleApiClient.isDocked(statusRaw);
-    this.isFaulted = !this.isOffline && MieleApiClient.isFaulted(statusRaw);
+    this.isFaulted = !this.isOffline && (MieleApiClient.isFaulted(statusRaw) || (state.signalFailure ?? false));
 
-    if (rc !== undefined) {
-      this.dustBoxIn = rc.dustBoxInserted ?? true;
-      this.isBlocked = (rc.blocked ?? false) || (rc.lost ?? false);
-    }
+    // Dust box: Miele signals a removed dust box via signalDoor (open compartment)
+    this.dustBoxIn = !(state.signalDoor ?? false);
+    // Stuck / blocked: reported via signalFailure
+    this.isBlocked = state.signalFailure ?? false;
 
     if (typeof state.batteryLevel === 'number') {
       this.batteryLevel = Math.max(0, Math.min(100, state.batteryLevel));
