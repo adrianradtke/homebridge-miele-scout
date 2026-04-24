@@ -467,13 +467,9 @@ export class RobotVacuumAccessory {
     const statusRaw: number = state.status?.value_raw ?? DeviceStatus.Off;
     const rc = state.robotCleaner;
 
-    // Temporary: log at info level so we can see the real status_raw values
+    // Temporary: dump full state so we can map all field names and values
     this.platform.log.info(
-      `[${this.accessory.displayName}] updateState` +
-        ` status_raw=${statusRaw} (${state.status?.value_localized ?? '?'})` +
-        ` battery=${state.batteryLevel}%` +
-        ` dustBox=${rc?.dustBoxInserted ?? '?'}` +
-        ` blocked=${rc?.blocked ?? '?'} lost=${rc?.lost ?? '?'}`,
+      `[${this.accessory.displayName}] updateState RAW: ${JSON.stringify(state).slice(0, 600)}`,
     );
 
     // Snapshot previous values
